@@ -1,36 +1,34 @@
 <?php
-session_start();
-include "koneksi.php";
+session_start(); // Selalu mulai session di awal skrip
 
-// Jika tombol login ditekan
-if (isset($_POST['login'])) {
+// Jika pengguna sudah login, arahkan langsung ke halaman data_siswa.php
+if (isset($_SESSION['loggedin']) && $_SESSION['loggedin'] === true) {
+    header('Location: data_siswa.php');
+    exit;
+}
 
-    $username = $_POST['username'];
-    $password = $_POST['password'];
+// Data pengguna dummy (ganti dengan database di aplikasi nyata)
+$valid_username = 'admin';
+$valid_password = 'password123'; // Di produksi, gunakan password_hash() dan password_verify()
 
-    // Ambil user berdasarkan username
-    $query = mysqli_query($koneksi, "SELECT * FROM users WHERE username='$username'");
-    $data = mysqli_fetch_assoc($query);
+$error_message = '';
 
-    if ($data) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $input_username = $_POST['username'] ?? '';
+    $input_password = $_POST['password'] ?? '';
 
-        // Cocokkan password
-        if (password_verify($password, $data['password'])) {
+    if (empty($input_username) || empty($input_password)) {
+        $error_message = 'Username dan password tidak boleh kosong.';
+    } elseif ($input_username === $valid_username && $input_password === $valid_password) {
+        // Kredensial benar, set session
+        $_SESSION['loggedin'] = true;
+        $_SESSION['username'] = $input_username; // Simpan username di session
 
-            // Simpan session
-            $_SESSION['username'] = $data['username'];
-            $_SESSION['nama'] = $data['nama'];
-
-            // Redirect ke index
-            header("Location: index.php");
-            exit;
-
-        } else {
-            $error = "Password salah!";
-        }
-
+        // Arahkan ke halaman data_siswa.php
+        header('Location: data_siswa.php');
+        exit;
     } else {
-        $error = "Username tidak ditemukan!";
+        $error_message = 'Username atau password salah.';
     }
 }
 ?>
@@ -39,99 +37,19 @@ if (isset($_POST['login'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login Kost 3.AM</title>
-
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<style>
-    html {
-        scroll-behavior: smooth;
-    }
-
-    /* Sama seperti hero pada index */
-    .hero-login {
-        background: url('https://images.unsplash.com/photo-1600607688969-a5bfcd646154?auto=format&fit=crop&w=1400&q=80') 
-                    center/cover no-repeat;
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        text-align: center;
-        color: white;
-        text-shadow: 1px 1px 10px black;
-        padding: 20px;
-    }
-
-    .login-box {
-        max-width: 380px;
-        width: 100%;
-        background: rgba(0, 0, 0, 0.45);
-        padding: 25px;
-        border-radius: 12px;
-        backdrop-filter: blur(5px);
-    }
-
-    .login-box label {
-        color: white;
-        font-weight: 500;
-    }
-
-    .btn-primary {
-        background-color: #0d6efd;
-        border: none;
-        padding: 10px;
-        font-size: 18px;
-        border-radius: 8px;
-    }
-
-    .btn-primary:hover {
-        background-color: #0b5ed7;
-    }
-
-    a {
-        color: #8fd8ff;
-        text-decoration: none;
-    }
-</style>
-
+    <title>Login - Data Siswa</title>
 </head>
 <body>
-
-<div class="hero-login">
-
-    <div class="login-box">
-
-        <h1 class="fw-bold mb-2">Login Kost 3.AM</h1>
-        <p class="mb-4">Masuk untuk melanjutkan</p>
-
-        <!-- Pesan error -->
-        <?php if (isset($error)) : ?>
-            <div class="alert alert-danger"><?php echo $error; ?></div>
+    <div class="login-container">
+        <h2>Login Data Siswa</h2>
+        <?php if (!empty($error_message)): ?>
+            <p class="error-message"><?php echo $error_message; ?></p>
         <?php endif; ?>
-
-        <form method="POST">
-
-            <div class="mb-3 text-start">
-                <label>Username</label>
-                <input type="text" name="username" class="form-control" required>
-            </div>
-
-            <div class="mb-3 text-start">
-                <label>Password</label>
-                <input type="password" name="password" class="form-control" required>
-            </div>
-
-            <button name="login" class="btn btn-primary w-100 mt-2">Login</button>
-
-            <p class="mt-3">Belum punya akun?
-                <a href="register.php">Daftar</a>
-            </p>
-
+        <form action="login.php" method="POST">
+            <input type="text" name="username" placeholder="Username" required autocomplete="username">
+            <input type="password" name="password" placeholder="Password" required autocomplete="current-password">
+            <button type="submit">Login</button>
         </form>
-
     </div>
-
-</div>
-
 </body>
 </html>
